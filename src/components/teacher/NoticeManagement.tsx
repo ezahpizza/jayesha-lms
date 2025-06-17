@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Bell, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { createNotice } from '@/controllers/teacherDashboardController';
+import { createNotice, updateNotice, deleteNotice } from '@/controllers/teacherDashboardController';
 import { formatDate } from '@/lib/utils';
 
 interface Batch {
@@ -36,6 +36,8 @@ interface NoticeManagementProps {
 export function NoticeManagement({ notices, batches, onRefresh }: NoticeManagementProps) {
   const { toast } = useToast();
   const [newNotice, setNewNotice] = useState({ title: '', content: '', batch_id: '' });
+  const [editingNotice, setEditingNotice] = useState<Notice | null>(null);
+  const [editFields, setEditFields] = useState({ title: '', content: '', batch_id: '' });
 
   const handleCreateNotice = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,6 +56,47 @@ export function NoticeManagement({ notices, batches, onRefresh }: NoticeManageme
     );
   };
 
+  const handleEditNotice = (notice: Notice) => {
+    setEditingNotice(notice);
+    setEditFields({
+      title: notice.title,
+      content: notice.content,
+      batch_id: notice.batch_id || ''
+    });
+  };
+
+  const handleUpdateNotice = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingNotice) return;
+    updateNotice(
+      {
+        id: editingNotice.id,
+        title: editFields.title,
+        content: editFields.content,
+        batch_id: editFields.batch_id || null
+      },
+      () => {
+        setEditingNotice(null);
+        setEditFields({ title: '', content: '', batch_id: '' });
+        onRefresh();
+        toast({ title: 'Success', description: 'Notice updated successfully!' });
+      },
+      (msg) => toast({ title: 'Error', description: msg, variant: 'destructive' })
+    );
+  };
+
+  const handleDeleteNotice = (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this notice?')) return;
+    deleteNotice(
+      id,
+      () => {
+        onRefresh();
+        toast({ title: 'Success', description: 'Notice deleted successfully!' });
+      },
+      (msg) => toast({ title: 'Error', description: msg, variant: 'destructive' })
+    );
+  };
+
   const getBatchName = (batchId: string | null) => {
     if (!batchId) return 'Broadcast';
     const batch = batches.find(b => b.id === batchId);
@@ -65,16 +108,18 @@ export function NoticeManagement({ notices, batches, onRefresh }: NoticeManageme
       {/* Create Notice Form */}
       <Card>
         <CardHeader>
-          <CardTitle>Create New Notice</CardTitle>
+          <CardTitle>{editingNotice ? 'Edit Notice' : 'Create New Notice'}</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleCreateNotice} className="space-y-4">
+          <form onSubmit={editingNotice ? handleUpdateNotice : handleCreateNotice} className="space-y-4">
             <div>
               <Label htmlFor="notice-title">Title</Label>
               <Input
                 id="notice-title"
-                value={newNotice.title}
-                onChange={(e) => setNewNotice({ ...newNotice, title: e.target.value })}
+                value={editingNotice ? editFields.title : newNotice.title}
+                onChange={(e) => editingNotice
+                  ? setEditFields({ ...editFields, title: e.target.value })
+                  : setNewNotice({ ...newNotice, title: e.target.value })}
                 required
                 placeholder="Enter notice title"
               />
@@ -83,8 +128,10 @@ export function NoticeManagement({ notices, batches, onRefresh }: NoticeManageme
               <Label htmlFor="notice-content">Content</Label>
               <Textarea
                 id="notice-content"
-                value={newNotice.content}
-                onChange={(e) => setNewNotice({ ...newNotice, content: e.target.value })}
+                value={editingNotice ? editFields.content : newNotice.content}
+                onChange={(e) => editingNotice
+                  ? setEditFields({ ...editFields, content: e.target.value })
+                  : setNewNotice({ ...newNotice, content: e.target.value })}
                 required
                 placeholder="Enter notice content"
               />
@@ -92,10 +139,12 @@ export function NoticeManagement({ notices, batches, onRefresh }: NoticeManageme
             <div>
               <Label>Target Batch (Leave empty for broadcast)</Label>
               <Select
-                value={newNotice.batch_id === null ? "broadcast" : newNotice.batch_id}
-                onValueChange={(value) =>
-                  setNewNotice({ ...newNotice, batch_id: value === "broadcast" ? null : value })
-                }
+                value={editingNotice
+                  ? (editFields.batch_id === null ? 'broadcast' : editFields.batch_id)
+                  : (newNotice.batch_id === null ? 'broadcast' : newNotice.batch_id)}
+                onValueChange={(value) => editingNotice
+                  ? setEditFields({ ...editFields, batch_id: value === 'broadcast' ? null : value })
+                  : setNewNotice({ ...newNotice, batch_id: value === 'broadcast' ? null : value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select batch (optional)" />
@@ -112,8 +161,13 @@ export function NoticeManagement({ notices, batches, onRefresh }: NoticeManageme
             </div>
             <Button type="submit">
               <Plus className="h-4 w-4 mr-2" />
-              Create Notice
+              {editingNotice ? 'Update Notice' : 'Create Notice'}
             </Button>
+            {editingNotice && (
+              <Button type="button" variant="outline" onClick={() => setEditingNotice(null)} className="ml-2">
+                Cancel
+              </Button>
+            )}
           </form>
         </CardContent>
       </Card>
@@ -135,6 +189,12 @@ export function NoticeManagement({ notices, batches, onRefresh }: NoticeManageme
                         <Bell className="h-3 w-3 mr-1" />
                         {getBatchName(notice.batch_id)}
                       </Badge>
+                      <Button size="sm" variant="outline" onClick={() => handleEditNotice(notice)}>
+                        Edit
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => handleDeleteNotice(notice.id)}>
+                        Delete
+                      </Button>
                     </div>
                   </div>
                   <p className="text-gray-600 mb-2">{notice.content}</p>

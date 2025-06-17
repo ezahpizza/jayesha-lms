@@ -7,7 +7,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { Navbar } from "@/components/layout/Navbar";
-import Index from "./pages/Index";
 import Home from "./pages/Home";
 import Portfolio from "./pages/Portfolio";
 import Contact from "./pages/Contact";
@@ -25,7 +24,7 @@ const App = () => (
       <Sonner />
       <AuthProvider>
         <BrowserRouter>
-          <div className="min-h-screen bg-white">
+            <div className="min-h-screen bg-gradient-to-r from-astralBlue to-balladPink">
             <Navbar />
             <Routes>
               <Route path="/" element={<Home />} />

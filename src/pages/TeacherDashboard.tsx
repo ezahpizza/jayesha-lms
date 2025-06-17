@@ -101,7 +101,7 @@ export default function TeacherDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+    <div className="overflow-x-hidden">
       <DashboardHeader 
         title="Teacher Dashboard" 
         subtitle={`Welcome back, ${profile?.name && profile.name.trim() ? profile.name : 'Teacher'}!`}
@@ -158,7 +158,7 @@ export default function TeacherDashboard() {
           </ResponsiveTabsContent>
 
           <ResponsiveTabsContent value="students">
-            <StudentManagement enrollments={enrollments} />
+            <StudentManagement enrollments={enrollments} onRefresh={handleRefreshEnrollments} />
           </ResponsiveTabsContent>
         </ResponsiveTabs>
       </div>

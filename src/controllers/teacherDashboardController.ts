@@ -1,5 +1,34 @@
 import { supabase } from '@/integrations/supabase/client';
 
+// Type definitions
+interface Batch {
+  id: string;
+  name: string;
+  description: string;
+  start_date: string;
+}
+
+interface Enrollment {
+  id: string;
+  status: string;
+  enrolled_at: string;
+  batches: Batch;
+  users: {
+    id: string;
+    name: string;
+    phone_number: string;
+  } | null;
+}
+
+interface Notice {
+  id: string;
+  title: string;
+  content: string;
+  batch_id: string | null;
+  created_at: string;
+}
+
+// Existing fetch functions
 export async function fetchBatches(setBatches: (batches: any[]) => void) {
   try {
     const { data, error } = await supabase
@@ -55,6 +84,90 @@ export async function fetchSubmissions(setSubmissions: (submissions: any[]) => v
   }
 }
 
+// Student Management Functions
+export function groupStudentsByBatch(enrollments: Enrollment[]) {
+  return enrollments.reduce((acc, enrollment) => {
+    const batchId = enrollment.batches.id;
+    if (!acc[batchId]) {
+      acc[batchId] = {
+        batch: enrollment.batches,
+        students: []
+      };
+    }
+    acc[batchId].students.push(enrollment);
+    return acc;
+  }, {} as Record<string, { batch: Batch; students: Enrollment[] }>);
+}
+
+export function extractStudentListFromEnrollments(students: Enrollment[]): { id: string; name: string; phone_number: string }[] {
+  return students
+    .filter(enrollment => enrollment.users)
+    .map(enrollment => ({
+      id: enrollment.users!.id,
+      name: enrollment.users!.name,
+      phone_number: enrollment.users!.phone_number
+    }));
+}
+
+// Notice Management Functions
+export async function createNotice(
+  notice: { title: string; content: string; batch_id: string | null },
+  onSuccess: () => void,
+  onError: (message: string) => void
+) {
+  try {
+    const { error } = await supabase
+      .from('notices')
+      .insert([notice]);
+
+    if (error) throw error;
+    onSuccess();
+  } catch (error: any) {
+    onError(error.message);
+  }
+}
+
+export async function updateNotice(
+  notice: { id: string; title: string; content: string; batch_id: string | null },
+  onSuccess: () => void,
+  onError: (message: string) => void
+) {
+  try {
+    const { error } = await supabase
+      .from('notices')
+      .update({ 
+        title: notice.title, 
+        content: notice.content, 
+        batch_id: notice.batch_id 
+      })
+      .eq('id', notice.id);
+
+    if (error) throw error;
+    onSuccess();
+  } catch (error: any) {
+    onError(error.message);
+  }
+}
+
+export async function deleteNotice(
+  noticeId: string,
+  onSuccess: () => void,
+  onError: (message: string) => void
+) {
+  try {
+    const { error } = await supabase
+      .from('notices')
+      .delete()
+      .eq('id', noticeId);
+
+    if (error) throw error;
+    onSuccess();
+  } catch (error: any) {
+    onError(error.message);
+  }
+}
+
+// Batch Management
 export async function createBatch(newBatch, onSuccess, onError) {
   try {
     const { error } = await supabase.from('batches').insert([newBatch]);
@@ -96,17 +209,10 @@ export async function fetchBatchStudents(batchId, setStudents, setLoading) {
   setLoading(false);
 }
 
-export async function createNotice(newNotice, onSuccess, onError) {
-  try {
-    const { error } = await supabase.from('notices').insert([newNotice]);
-    if (error) throw error;
-    onSuccess();
-  } catch (error) {
-    onError(error.message);
-  }
-}
-
-export async function updateEnrollmentStatus(enrollmentId, action, onSuccess, onError) {
+// Enrollment Management
+export async function updateEnrollmentStatus(
+  enrollmentId, action, onSuccess, onError
+) {
   try {
     const { error } = await supabase.from('enrollments').update({ status: action }).eq('id', enrollmentId);
     if (error) throw error;
@@ -116,60 +222,60 @@ export async function updateEnrollmentStatus(enrollmentId, action, onSuccess, on
   }
 }
 
-export async function updateEnrollmentStatusAndRefresh(enrollmentId, action, onSuccess, onError, onRefresh) {
-  try {
-    const { error } = await supabase.from('enrollments').update({ status: action }).eq('id', enrollmentId);
-    if (error) throw error;
-    onSuccess();
-    if (onRefresh) onRefresh();
-  } catch (error) {
-    onError(error.message);
-  }
-}
-
-// Moves enrollment status update logic from DashboardOverview
-export async function handleEnrollmentActionController(enrollmentId: string, action: 'approved' | 'rejected') {
-  const { error } = await supabase
-    .from('enrollments')
-    .update({ status: action })
-    .eq('id', enrollmentId);
-  if (error) throw error;
-}
-
-// Moves submission download logic from DashboardOverview
-export async function getSubmissionDownloadUrlController(pdfUrl: string): Promise<string> {
-  // pdfUrl may be a path or just a filename
+// Submission Management
+export async function getSubmissionDownloadUrlController(pdfUrl) {
   const filePath = pdfUrl.startsWith('submissions/') ? pdfUrl.slice('submissions/'.length) : pdfUrl;
-  const { data, error } = await supabase.storage
-    .from('submissions')
-    .createSignedUrl(filePath, 60);
+  const { data, error } = await supabase.storage.from('submissions').createSignedUrl(filePath, 60);
   if (error) throw error;
   if (!data?.signedUrl) throw new Error('No signed URL returned.');
   return data.signedUrl;
 }
 
-// Moves grouping logic from StudentManagement
-export function groupStudentsByBatch(enrollments: any[]) {
-  return enrollments.filter(e => e.status === 'approved').reduce((acc, enrollment) => {
-    const batchId = enrollment.batches.id;
-    if (!acc[batchId]) {
-      acc[batchId] = {
-        batch: enrollment.batches,
-        students: []
-      };
-    }
-    acc[batchId].students.push(enrollment);
-    return acc;
-  }, {} as Record<string, { batch: any; students: any[] }>);
+export async function deleteEnrollment(
+  enrollmentId: string
+) {
+  const { error } = await supabase
+    .from('enrollments')
+    .delete()
+    .eq('id', enrollmentId);
+  if (error) throw error;
 }
 
-// Moves student extraction logic from StudentManagement
-export function extractStudentListFromEnrollments(students: any[]): { id: string; name: string; phone_number: string }[] {
-  return students
-    .filter((enrollment: any) => enrollment.users)
-    .map((enrollment: any) => ({
-      id: enrollment.users.id,
-      name: enrollment.users.name,
-      phone_number: enrollment.users.phone_number
-    }));
+export async function approveOrRejectEnrollment(
+  enrollmentId: string,
+  status: 'approved' | 'rejected',
+  onSuccess: () => void,
+  onError: (msg: string) => void,
+  onRefresh?: () => void
+) {
+  try {
+    const { error } = await supabase
+      .from('enrollments')
+      .update({ status })
+      .eq('id', enrollmentId);
+    if (error) throw error;
+    onSuccess();
+    if (onRefresh) onRefresh();
+  } catch (error: any) {
+    onError(error.message);
+  }
+}
+
+export async function removeEnrollment(
+  enrollmentId: string,
+  onSuccess: () => void,
+  onError: (msg: string) => void,
+  onRefresh?: () => void
+) {
+  try {
+    const { error } = await supabase
+      .from('enrollments')
+      .delete()
+      .eq('id', enrollmentId);
+    if (error) throw error;
+    onSuccess();
+    if (onRefresh) onRefresh();
+  } catch (error: any) {
+    onError(error.message);
+  }
 }

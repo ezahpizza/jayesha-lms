@@ -129,7 +129,7 @@ export default function StudentDashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+    <div className="overflow-x-hidden">
       <DashboardHeader 
         title="Student Dashboard" 
         subtitle={`Welcome back, ${profile?.name && profile.name.trim() ? profile.name : 'Student'}!`}

@@ -8,10 +8,7 @@ import {
   Download
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  handleEnrollmentActionController, 
-  getSubmissionDownloadUrlController 
-} from '@/controllers/teacherDashboardController';
+import { approveOrRejectEnrollment, getSubmissionDownloadUrlController } from '@/controllers/teacherDashboardController';
 import { formatDate } from '@/lib/utils';
 
 interface Batch {
@@ -59,21 +56,25 @@ export function DashboardOverview({
 }: DashboardOverviewProps) {
   const { toast } = useToast();
 
-  const handleEnrollmentAction = async (enrollmentId: string, action: 'approved' | 'rejected') => {
-    try {
-      await handleEnrollmentActionController(enrollmentId, action);
-      toast({
-        title: "Success",
-        description: `Enrollment ${action} successfully!`,
-      });
-      onEnrollmentAction();
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
+  const handleEnrollmentAction = (enrollmentId: string, action: 'approved' | 'rejected') => {
+    approveOrRejectEnrollment(
+      enrollmentId,
+      action,
+      () => {
+        toast({
+          title: "Success",
+          description: `Enrollment ${action} successfully!`,
+        });
+        onEnrollmentAction();
+      },
+      (msg) => {
+        toast({
+          title: "Error",
+          description: msg,
+          variant: "destructive",
+        });
+      }
+    );
   };
 
   const downloadSubmission = async (pdfUrl: string) => {

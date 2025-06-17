@@ -3,9 +3,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { StudentListModal } from './StudentListModal';
-import { Users, Eye } from 'lucide-react';
+import { Users, Eye, CheckCircle, XCircle } from 'lucide-react';
 import { useState } from 'react';
-import { groupStudentsByBatch, extractStudentListFromEnrollments } from '@/controllers/teacherDashboardController';
+import { useToast } from '@/hooks/use-toast';
+import { groupStudentsByBatch, extractStudentListFromEnrollments, approveOrRejectEnrollment, removeEnrollment } from '@/controllers/teacherDashboardController';
 
 interface Batch {
   id: string;
@@ -26,17 +27,23 @@ interface Enrollment {
   } | null;
 }
 
-interface StudentManagementProps {
-  enrollments: Enrollment[];
+interface BatchStudents {
+  batch: Batch;
+  students: Enrollment[];
 }
 
-export function StudentManagement({ enrollments }: StudentManagementProps) {
+interface StudentManagementProps {
+  enrollments: Enrollment[];
+  onRefresh: () => void;
+}
+
+export function StudentManagement({ enrollments, onRefresh }: StudentManagementProps) {
+  const { toast } = useToast();
   const [selectedStudents, setSelectedStudents] = useState<{ id: string; name: string; phone_number: string }[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Use controller for grouping
-  const studentsByBatch = groupStudentsByBatch(enrollments);
+  const studentsByBatch: Record<string, BatchStudents> = groupStudentsByBatch(enrollments);
 
   const handleViewStudents = (students: Enrollment[]) => {
     setLoading(true);
@@ -46,10 +53,34 @@ export function StudentManagement({ enrollments }: StudentManagementProps) {
     setLoading(false);
   };
 
+  const handleUpdateStatus = (enrollmentId: string, status: 'approved' | 'rejected') => {
+    approveOrRejectEnrollment(
+      enrollmentId,
+      status,
+      () => {
+        toast({ title: "Success", description: `Student ${status} successfully` });
+        onRefresh();
+      },
+      (msg) => toast({ title: "Error", description: msg, variant: "destructive" })
+    );
+  };
+
+  const handleDeleteEnrollment = (enrollmentId: string) => {
+    if (!window.confirm('Are you sure you want to delete this student enrollment?')) return;
+    removeEnrollment(
+      enrollmentId,
+      () => {
+        toast({ title: 'Success', description: 'Student enrollment deleted.' });
+        onRefresh();
+      },
+      (msg) => toast({ title: 'Error', description: msg, variant: 'destructive' })
+    );
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6">
-      {Object.values(studentsByBatch).map(({ batch, students }) => (
-        <Card key={batch.id}>
+      {Object.entries(studentsByBatch).map(([batchId, { batch, students }]) => (
+        <Card key={batchId}>
           <CardHeader className="pb-3">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
               <CardTitle className="flex items-center space-x-2">
@@ -88,13 +119,54 @@ export function StudentManagement({ enrollments }: StudentManagementProps) {
                 }
                 return (
                   <div key={enrollment.id} className="p-3 border rounded-lg hover:shadow-sm transition-shadow">
-                    <h4 className="font-medium text-sm sm:text-base truncate">{enrollment.users.name}</h4>
-                    <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                      Phone: {enrollment.users.phone_number}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Enrolled: {new Date(enrollment.enrolled_at).toLocaleDateString()}
-                    </p>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-medium text-sm sm:text-base truncate">{enrollment.users.name}</h4>
+                        <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                          Phone: {enrollment.users.phone_number}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Enrolled: {new Date(enrollment.enrolled_at).toLocaleDateString()}
+                        </p>
+                        <Badge 
+                          variant={enrollment.status === 'approved' ? "secondary" : 
+                                 enrollment.status === 'rejected' ? "destructive" : 
+                                 "outline"}
+                          className="mt-2"
+                        >
+                          {enrollment.status}
+                        </Badge>
+                      </div>
+                      <div className="flex flex-col gap-2 items-end">
+                        {enrollment.status === 'pending' && (
+                          <div className="flex gap-2">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              onClick={() => handleUpdateStatus(enrollment.id, 'approved')}
+                            >
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              onClick={() => handleUpdateStatus(enrollment.id, 'rejected')}
+                            >
+                              <XCircle className="h-4 w-4 text-red-600" />
+                            </Button>
+                          </div>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDeleteEnrollment(enrollment.id)}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 );
               })}

@@ -61,7 +61,15 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				'vistaBlue': '#92acff',
+				'oxfordBlue': '#0e0929',
+				'lavender': '#9187f5',
+				'coral': '#ff5b8e',
+				'tanBlack': '#050505',
+				'astralBlue': '#101e42',
+				'rosaWhite': '#ffede2',
+				'balladPink': '#a6427c',
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
