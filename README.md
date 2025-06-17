@@ -1,4 +1,4 @@
-# Jayashree LMS
+# JayaLearn
 
 A modern, full-featured Learning Management System (LMS) built for small-scale tutorials and tuition classes. This project was created for my mom, Jayashree, who is a passionate teacher running her own home-based tutorial. The LMS streamlines her workflow, helping her manage batches, students, homework, notices, and more—all in one place.
 
@@ -118,7 +118,7 @@ A modern, full-featured Learning Management System (LMS) built for small-scale t
 
 ## ❤️ Credits
 
-- Built with love for my mom, Jayashree, and her students.
+- Built with love for my mom, and her students.
 - Powered by open-source: React, Vite, Tailwind CSS, Supabase, and more.
 
 ---
