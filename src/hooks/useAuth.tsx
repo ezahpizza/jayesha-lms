@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -187,28 +188,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const signInWithName = async (name: string, password: string) => {
     try {
-      // First, find the user by name in the public.users table
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id')
-        .ilike('name', name.trim())
-        .single();
+      // Use RPC call to get the email directly
+      const { data: userEmail, error: rpcError } = await supabase
+        .rpc('get_user_email_by_name', { user_name: name.trim() });
 
-      if (userError || !userData) {
+      if (rpcError || !userEmail) {
         throw new Error('User not found with that name');
-      }
-
-      // Get the email from auth.users table using the user ID
-      const { data: authData, error: authError } = await supabase
-        .rpc('get_user_email_by_id', { user_id: userData.id });
-
-      if (authError || !authData) {
-        throw new Error('Unable to retrieve user email');
       }
 
       // Now sign in with email and password
       const { error } = await supabase.auth.signInWithPassword({
-        email: authData,
+        email: userEmail,
         password,
       });
 

@@ -15,7 +15,7 @@ export function ImageCarousel() {
   }, [current]);
 
   return (
-    <div className="relative w-full max-w-5xl mx-auto mt-12 rounded-xl overflow-hidden shadow-lg aspect-[5/3]">
+    <div className="relative w-full max-w-5xl mx-auto mt-12 rounded-xl overflow-hidden shadow-lg aspect-[5/4]">
         <div
             className="flex transition-transform duration-700 ease-in-out h-full"
             style={{ transform: `translateX(-${current * 100}%)` }}

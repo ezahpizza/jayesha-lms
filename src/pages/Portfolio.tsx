@@ -52,12 +52,8 @@ export default function Portfolio() {
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
-                <Badge variant="secondary">B.Ed</Badge>
-                <span>Bachelor of Education - Premier College (2013)</span>
-              </div>
-              <div className="flex items-center space-x-3">
                 <Badge variant="secondary">Certified</Badge>
-                <span>Teaching Excellence Certificate (2020)</span>
+                <span>Teaching Excellence Certificate</span>
               </div>
               <div className="flex items-center space-x-3">
                 <Badge variant="secondary">Licensed</Badge>

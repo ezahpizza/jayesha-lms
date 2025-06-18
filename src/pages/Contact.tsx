@@ -26,7 +26,11 @@ export default function Contact() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-
+  const WEB3FORMS_API_KEY = import.meta.env.VITE_WEB3FORMS_API_KEY as string;
+  if (!WEB3FORMS_API_KEY) {
+    console.error('WEB3FORMS_API_KEY is not defined');
+    return <div>Error: WEB3FORMS_API_KEY is not defined</div>;
+  }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -38,7 +42,7 @@ export default function Contact() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          access_key: process.env.REACT_APP_WEB3FORMS_API_KEY || 'your-web3forms-api-key',
+          access_key: WEB3FORMS_API_KEY,
           name: formData.name,
           email: formData.email,
           phone: formData.phone,

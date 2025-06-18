@@ -101,14 +101,14 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4 overflow-x-hidden">
+    <div className="flex items-center justify-center p-4 overflow-x-hidden">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center mb-4 pt-8">
             <GraduationCap className="h-12 w-12 text-blue-600" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Jaya LMS</h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-2">Access your learning dashboard</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-coral">JayaLearn</h1>
+          <p className="text-sm sm:text-base text-rosaWhite mt-2">Access your learning dashboard</p>
         </div>
 
         <Card>

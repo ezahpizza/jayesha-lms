@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, BookOpen, Bell, User } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
-import { Navbar } from '@/components/layout/Navbar';
 import { ImageCarousel } from '@/components/ui/ImageCarousel';
 import { Snowfall } from '@/components/ui/Snowfall';
 
